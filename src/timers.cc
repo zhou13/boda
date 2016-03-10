@@ -7,8 +7,11 @@
 // NOTE: we use pre-2.0 sparsehash include path for compatiblity with
 // ubuntu 14.04 (which ships sparsehash 1.10) for now, but this should
 // eventually become <sparsehash/dense_hash_map>.
+#ifdef ANDROID
+#include<sparsehash/dense_hash_map> 
+#else
 #include<google/dense_hash_map> 
-
+#endif
 namespace boda
 {
   using std::pair;

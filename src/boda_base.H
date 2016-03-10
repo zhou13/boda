@@ -16,10 +16,11 @@
 
 # define assert_st(expr)							\
   ((expr)								\
-   ? __ASSERT_VOID_CAST (0)						\
-   : __assert_fail ((std::string(" failed:\n") + __STRING(expr)+\
-		     "\n "+stacktrace_str( get_backtrace(), 0 )).c_str(),	\
-		    __FILE__, __LINE__, __ASSERT_FUNCTION))
+   ? static_cast<void>(0)						\
+   : __assert2 (__FILE__, __LINE__, __PRETTY_FUNCTION__		\
+		,(std::string(" failed:\n") + __STRING(expr)+		\
+		 "\n "+stacktrace_str( get_backtrace(), 0 )).c_str()	\
+		))
 
 
 namespace boost {

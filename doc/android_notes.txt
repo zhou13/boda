@@ -1,0 +1,45 @@
+#making standalone toolchain
+#stock ndk
+android-ndk-r10e/build/tools/make-standalone-toolchain.sh --install-dir=my-android-toolchain --platform=android-21 --toolchain=aarch64-linux-android-4.9
+#cyrstaX
+crystax-ndk-10.3.1/build/tools/make-standalone-toolchain.sh --install-dir=crys-android-tc --platform=android-21 --toolchain=aarch64-linux-android-4.9
+
+# port forwarding for adb server
+ssh -L 5037:localhost:5037  bitter -Nn &
+# port forwarding for adb server and gdb server (adb forwards will open listening ports on bitter, not maaya)
+ssh -L 5037:localhost:5037 -L 5039:localhost:5039 bitter -Nn &
+
+# start boda under gdbserver64
+root@msm8996:/data/local/boda/run/tr1 # LD_LIBRARY_PATH=../../lib gdbserver64 :5039 ../../lib/boda 
+
+# forward gdbserver port from msm8996 to bitter
+moskewcz@maaya:~/scratch$ adb forward tcp:5039 tcp:5039
+
+# start debugging session on maaya (via port forward to bitter)
+moskewcz@maaya:~/scratch$ /scratch/moskewcz/android/crys-android-tc/bin/aarch64-linux-android-gdb ~/git_work/boda_android/lib/boda -ex "target remote :5039"
+
+#building boost using android NDK: see http://stackoverflow.com/questions/30491158/compile-and-use-boost-for-android-ndk-r10e/35922934#35922934
+
+# configure/compile google sparsehash
+
+moskewcz@maaya:/scratch/moskewcz/android/src/sparsehash-sparsehash-2.0.3$ PATH=/scratch/android-stc/bin:/scratch/android-stc:/scratch/moskewcz/android/android-ndk-r10e/prebuilt/linux-x86_64/bin:$PATH ./configure --host=aarch64-linux-android
+...
+moskewcz@maaya:/scratch/moskewcz/android/src/sparsehash-sparsehash-2.0.3$ PATH=/scratch/android-stc/bin:/scratch/android-stc:/scratch/moskewcz/android/android-ndk-r10e/prebuilt/linux-x86_64/bin:$PATH make
+
+
+# configure/compile google protobuf 2.6.1 
+# get tarball, upack somewhere, and make 'normal' host build -- it seems we need a host version of protoc to cross compile
+moskewcz@maaya:~/src/protobuf-2.6.1$ ./configure && make -j8
+# unpack somewhere else for cross compilation. first, configure. note --disable-shared and --with-protoc=local_protoc options.
+moskewcz@maaya:/scratch/moskewcz/android/src/protobuf-2.6.1$ PATH=/scratch/android-stc/bin:/scratch/android-stc:/scratch/moskewcz/android/android-ndk-r10e/prebuilt/linux-x86_64/bin:$PATH ./configure --host=aarch64-linux-android --with-protoc=/home/moskewcz/src/protobuf-2.6.1/src/protoc --disable-shared
+# build -- libs go into ./src/.libs
+moskewcz@maaya:/scratch/moskewcz/android/src/protobuf-2.6.1$ PATH=/scratch/android-stc/bin:/scratch/android-stc:/scratch/moskewcz/android/android-ndk-r10e/prebuilt/linux-x86_64/bin:$PATH make -j8
+
+
+#deploy/run boda (from boda lib dir on maaya)
+
+moskewcz@maaya:~/git_work/boda_android/lib$ /scratch/android-stc/bin/aarch64-linux-android-strip boda && adb push boda /data/local/boda/lib
+559 KB/s (2456528 bytes in 4.287s)
+
+oskewcz@maaya:~/git_work/boda_android/lib$ adb shell "cd /data/local/boda/run/tr1; LD_LIBRARY_PATH=../../lib ../../lib/boda rtc_test --rtc='(be=ocl)' --prog-fn='%(boda_test_dir)/ocl_test_dot.cl' && cat rtc_test.txt"
+All is Well.

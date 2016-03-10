@@ -16,9 +16,13 @@ endif
 TARGET := ../lib/boda
 #LIBTARGET=../lib/libboda.so # currently unused/broken for boda, enabling may be usefull for pre-debugging/testing shared-lib building 
 # basic setup; FIXME: move (some of this) to obj_list?
-CPP := g++
-CPPFLAGS := -Wall -O3 -g -std=c++0x -rdynamic -fPIC -fopenmp -Wall 
-LDFLAGS := -lboost_system -lboost_filesystem -lboost_iostreams -lboost_regex -lboost_program_options 
+CPP := /scratch/android-stc/bin/aarch64-linux-android-g++ 
+CPPFLAGS := -Wall -O3 -g -std=c++0x -fPIC -fopenmp -Wall -fPIE -pie -I/scratch/moskewcz/android/src/boost_1_60_0 -I/scratch/moskewcz/android/adreno/include -DANDROID -I/scratch/moskewcz/android/src/sparsehash-sparsehash-2.0.3/src
+LDFLAGS := -lgnustl_shared -lz -fopenmp -fPIE -pie \
+	-L/scratch/moskewcz/android/src/boost_1_60_0/stage/lib \
+	-lboost_system -lboost_filesystem -lboost_iostreams -lboost_regex -lboost_program_options \
+	-L/scratch/moskewcz/android/adreno/lib64 \
+	-lgsl -lc++ -llog -lutils -lbacktrace -lbase -lunwind -lc -lui -lhardware -lsync -lCB -lcutils -lm -lc -ldl
 
 # --- makefile header section ends --- 
 # --- makefile generic c++ compilation, linking, and dependency handling rules and reciepies section begins --- 

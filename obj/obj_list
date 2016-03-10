@@ -7,30 +7,31 @@
 # dependency section may be empty. however, it will still function in order to disable particular object files from
 # being built if desired.
 
-[lmdb]
+[lmdb disable]
 # assume system defaults include needed include/lib dirs
 LDFLAGS := $(LDFLAGS) -llmdb
 
-[octave]
+[octave disable]
 CPPFLAGS := $(CPPFLAGS) -I/usr/include/octave-4.0.0 -I/usr/include/octave-4.0.0/octave
 LDFLAGS := $(LDFLAGS) -loctave -loctinterp
 
-[SDL2]
+[SDL2 disable]
 CPPFLAGS := $(CPPFLAGS) -I/usr/include/SDL2 -I/usr/local/include/SDL2
 LDFLAGS := $(LDFLAGS) -lSDL2 -lSDL2_ttf -lrt
 
 [caffe_pb gen_fn=caffe.pb.cc gen_fn=caffe.pb.h]
-LDFLAGS := $(LDFLAGS) -lprotobuf
+CPPFLAGS := $(CPPFLAGS) -I/scratch/moskewcz/android/src/protobuf-2.6.1/src
+LDFLAGS := $(LDFLAGS) -L/scratch/moskewcz/android/src/protobuf-2.6.1/src/.libs -lprotobuf
 # manually add deps since we can create this particular header (which is unusual and otherwise unhandled by the header
 # deps system.
 caffepb.o : ../src/gen/caffe.pb.h 
 upgrade_proto.o : ../src/gen/caffe.pb.h 
 # note: it may be possible to not rebuild caffe.pb.h / caffe.pb.cc in some cases
 ../src/gen/caffe.pb.cc ../src/gen/caffe.pb.h : ../src/ext/caffe.proto
-	protoc -I../src/ext --cpp_out=../src/gen ../src/ext/caffe.proto
+	/home/moskewcz/src/protobuf-2.6.1/src/protoc -I../src/ext --cpp_out=../src/gen ../src/ext/caffe.proto
 
 
-[cuda]
+[cuda disable]
 CUDA_HOME := /usr/local/cuda
 CPPFLAGS := $(CPPFLAGS) -I$(CUDA_HOME)/include
 CUDA_LIB = $(CUDA_HOME)/lib64
@@ -39,13 +40,13 @@ LDFLAGS := $(LDFLAGS) -L$(CUDA_LIB) -lcudart -lcublas -lcurand -lcuda
 # if you prefer to use LD_LIBRARY_PATH or other methods, comment out the following line:
 LDFLAGS := $(LDFLAGS) -Wl,-rpath,$(CUDA_LIB)
 
-[nvrtc needs=cuda]
+[nvrtc needs=cuda disable]
 LDFLAGS := $(LDFLAGS) -lnvrtc
 
 [opencl]
 LDFLAGS := $(LDFLAGS) -lOpenCL
 
-[caffe needs=cuda needs=caffe_pb]
+[caffe needs=cuda needs=caffe_pb disable]
 CAFFE_HOME := /home/moskewcz/git_work/caffe_dev
 CAFFE_LIB := $(CAFFE_HOME)/build/lib
 CPPFLAGS := $(CPPFLAGS) -I$(CAFFE_HOME)/include -I$(CAFFE_HOME)/build/src
@@ -57,11 +58,11 @@ ifneq ($(shell diff -wq ../src/ext/caffe.proto ${CAFFE_HOME}/src/caffe/proto/caf
 $(error "building with caffe support, but diff of boda copy of caffe.proto with caffe version failed (because the content diffed, a file was not found, etc). run diff manually for details and/or update boda version of caffe.proto. aborting make.")
 endif
 
-[python]
+[python disable]
 CPPFLAGS := $(CPPFLAGS) -I/usr/include/python2.7 
 LDFLAGS := $(LDFLAGS) -lpython2.7
 
-[turbojpeg] # disable-able, but will cause any test/mode that tries to load a .jpeg to fail at run-time
+[turbojpeg disable] # disable-able, but will cause any test/mode that tries to load a .jpeg to fail at run-time
 LDFLAGS := $(LDFLAGS) -lturbojpeg
 
 # list of object files to compile. at least the objects that are direct dependencies of the above sections should be

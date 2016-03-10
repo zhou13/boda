@@ -3,7 +3,9 @@
 #include"str_util.H"
 #include"pyif.H"
 #include<memory>
+#ifndef ANDROID
 #include<execinfo.h>
+#endif
 #include<cxxabi.h>
 #include<boost/filesystem.hpp>
 #include<boost/iostreams/device/mapped_file.hpp>
@@ -318,7 +320,13 @@ namespace boda
   void write_whole_fn( std::string const & fn, std::string const & data ) { return write_whole_fn( filename_t{fn,fn}, data ); }
 
   uint32_t const max_frames = 64;
-
+#ifdef ANDROID
+  p_vect_rp_void get_backtrace( void )  { return p_vect_rp_void(); }
+  string stacktrace_str( p_vect_rp_void bt, uint32_t strip_frames ) {
+    // note: bt is null
+    return string( "stacktrace TODO on android" );
+  }
+#else
   p_vect_rp_void get_backtrace( void )
   {
     // we could easily double bt until the trace fits, but for now
@@ -372,7 +380,7 @@ namespace boda
     }
     return ret;
   }
-
+#endif
   rt_exception::rt_exception( std::string const & err_msg_, p_vect_rp_void bt_ ) : err_msg(err_msg_), bt(bt_) {}
   char const * rt_exception::what( void ) const throw() { return err_msg.c_str(); }
   string rt_exception::what_and_stacktrace( void ) const { return err_msg + "\n" + stacktrace_str( bt, 2 ); }
