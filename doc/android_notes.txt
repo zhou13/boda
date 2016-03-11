@@ -35,6 +35,9 @@ moskewcz@maaya:/scratch/moskewcz/android/src/protobuf-2.6.1$ PATH=/scratch/andro
 # build -- libs go into ./src/.libs
 moskewcz@maaya:/scratch/moskewcz/android/src/protobuf-2.6.1$ PATH=/scratch/android-stc/bin:/scratch/android-stc:/scratch/moskewcz/android/android-ndk-r10e/prebuilt/linux-x86_64/bin:$PATH make -j8
 
+# configure/compile libturbojpeg (used 1.4.90) (aka 1.5.0 beta 1?) -- static libs only
+moskewcz@maaya:/scratch/moskewcz/android/src/libjpeg-turbo-1.4.90$ PATH=/scratch/android-stc/bin:/scratch/android-stc:/scratch/moskewcz/android/android-ndk-r10e/prebuilt/linux-x86_64/bin:$PATH ./configure --host=aarch64-linux-android --disable-shared
+moskewcz@maaya:/scratch/moskewcz/android/src/libjpeg-turbo-1.4.90$ PATH=/scratch/android-stc/bin:/scratch/android-stc:/scratch/moskewcz/android/android-ndk-r10e/prebuilt/linux-x86_64/bin:$PATH make -j8
 
 #deploy/run boda (from boda lib dir on maaya)
 
