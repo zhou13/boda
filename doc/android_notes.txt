@@ -46,3 +46,36 @@ moskewcz@maaya:~/git_work/boda_android/lib$ /scratch/android-stc/bin/aarch64-lin
 
 oskewcz@maaya:~/git_work/boda_android/lib$ adb shell "cd /data/local/boda/run/tr1; LD_LIBRARY_PATH=../../lib ../../lib/boda rtc_test --rtc='(be=ocl)' --prog-fn='%(boda_test_dir)/ocl_test_dot.cl' && cat rtc_test.txt"
 All is Well.
+
+# test rtc-ipc compute-over-tcp
+# port forwarding boda tcp port (12792); first from device to bitter (over adb), then from bitter to maaya (over ssh)
+moskewcz@maaya:~/scratch$ adb reverse tcp:12791 tcp:12791
+moskewcz@maaya:~/scratch$ ssh -R 12791:localhost:12791  bitter -Nn &
+
+
+# with forwarding set up, run some mode using rtc with be=ipc on maaya using the 'print_dont_fork=1' option:
+moskewcz@maaya:~/git_work/boda/run/tr3$ boda test_compute --model-name=nin_imagenet --wins-per-image=1 --imgs='(pil_fn=%(boda_test_dir)/pascal/head_1/%%s.txt)' --run-cnet='(in_dims=(img=20,y=227,x=227))' --cf2='(mode=rtc,show_rtc_calls=1,rtc=(be=ipc,print_dont_fork=1,boda_parent_addr=tcp:127.0.0.1:12791))' --max-err=1 && cat test_compute.txt 
+boda ipc_compute_worker --rtc=(be=ocl) --boda-parent-addr=tcp:127.0.0.1:12791
+# ... here the server is waiting for the client to connect. then, in another shell, run the client on the device:
+moskewcz@maaya:~/git_work/boda_android/lib$ adb shell "cd /data/local/boda/run/tr1; LD_LIBRARY_PATH=../../lib ../../lib/boda ipc_compute_worker --rtc='(be=ocl)' --boda-parent-addr=tcp:127.0.0.1:12791"
+# now, be patient, as boda xfers lots'o'data (i.e. model params) over the slow tcp-over-adb-and-ssh link. after a min or so, you should get an error for this case:
+error: cl::CommandQueue::enqueueNDRangeKernel()() failed with ret=-54 (CL_INVALID_WORK_GROUP_SIZE)
+# going back to the original shell, the server should have died as well:
+boda: ../src/rtc_ipc.cc:241: virtual void boda::sock_stream_t::read(char* const&, const size_t&): Assertion ` failed:
+ret > 0
+ ----STACK TRACE (FRAMES=16-0)----
+  boda(boda::get_backtrace()+0xb4) [0x68b814]
+  boda(boda::sock_stream_t::read(char* const&, unsigned long const&)+0xea) [0x500fea]
+  boda(void boda::bread_bytes<boda::stream_t, 0>(boda::stream_t&, char* const&, unsigned long const&)+0xe) [0x5027ae]
+  boda(boda::ipc_compute_t::run(boda::rtc_func_call_t&)+0x5a4) [0x503134]
+# ... and more stacktrace ommited. for a working, simpler example, try the rtc_test mode, which does vector c = a + b:
+
+moskewcz@maaya:~/git_work/boda/run/tr3$ boda rtc_test --rtc='(be=ipc,print_dont_fork=1,boda_parent_addr=tcp:127.0.0.1:12791)' --data-sz=100000 && cat rtc_test.txt
+boda ipc_compute_worker --rtc=(be=ocl) --boda-parent-addr=tcp:127.0.0.1:12791
+# use the same client command as earlier to start a client on the remote device. in a few seconds it should terminate without error, and then the rtc_test command should output:
+All is Well.
+moskewcz@maaya:~/git_work/boda/run/tr3$ 
+
+
+
+
